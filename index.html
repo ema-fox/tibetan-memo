@@ -1,0 +1,35 @@
+<html>
+    <head>
+        <title>Tibetan</title>
+        <link rel="stylesheet" href="style.css">
+        <script src="script.js"></script>
+    </head>
+    <body>
+        <div id="ens"></div>
+        <div class="footer">
+        <div id="audios"></div>
+        <div id="controls">
+            <button id="play" onclick="play_audio_i()">
+                <div class="icon">&#x23F5;</div>
+                <div class="key">Space</div>
+            </button>
+            <button onclick="play_next_audio()">
+                <div class="icon">&#x23ED;</div>
+                <div class="key">Right arrow</div>
+            </button>
+        </div>
+        <div style="flex-grow: 0">
+            <div id="stats">
+                <progress id="progress"></progress>
+                <progress id="target"></progress>
+                <table>
+                </table>
+                <div>
+                    Made by <a href="mailto:ema@mailbox.org">Emanuel Rylke</a> with the woderful decks from <a href="https://www.small-steps-tibetan.com/">Small Steps Tibetan</a>
+                </div>
+            </div>
+
+        </div>
+        </div>
+    </body>
+</html>

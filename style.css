@@ -1,0 +1,115 @@
+body {
+  background-color: oklch(0.7 0 0);
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1em;
+  padding: 1em;
+  flex-grow: 1;
+  align-content: end;
+  align-items: end;
+  position: sticky;
+  bottom: 0px;
+}
+
+#ens {
+  font-size: 2em;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(32ch, 1fr));
+  gap: 1em;
+  margin: 1em;
+}
+
+#controls {
+  display: flex;
+  gap: 2em;
+  justify-content: center;
+  flex-grow: 1;
+}
+
+#stats {
+  margin-left: auto;
+  background-color: oklch(0.8 0 0);
+  padding: 1ch;
+  border-radius: 0.5ch;
+  width: fit-content;
+}
+
+.key {
+  display: none;
+  margin-right: 1ch;
+  font-size: 0.7em;
+  color: oklch(0.4 0 0);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .key {
+    display: inline;
+  }
+}
+
+.error {
+  background-color: oklch(0.9 0.1 0);
+  animation: error 2s;
+}
+
+.card {
+  border-radius: 0.5em;
+  margin: auto;
+  user-select: none;
+  cursor: pointer;
+  font-family: sans-serif;
+  max-width: 40ch;
+  overflow: hidden;
+  display: grid;
+  grid-template-areas: "a";
+}
+
+button {
+  width: 14em;
+}
+
+button .key {
+  font-size: 1.4em;
+  margin-right: 0ch;
+}
+
+.icon {
+  font-size: 10em;
+}
+
+@keyframes error {
+  from, to {
+    box-shadow: transparen 0px 0px 0px 0px;
+  }
+
+  10% {
+    box-shadow: red 0px 0px 0.2em 0.2em;
+  }
+}
+
+.label {
+  grid-area: a;
+}
+
+.label > div {
+  background: rgba(255, 255, 255, 0.3);
+  padding: 0.5em;
+  width: fit-content;
+  border-bottom-right-radius: 0.5em;
+  margin-right: -0.5em;
+  backdrop-filter: blur(0.5em);
+}
+
+.card > img {
+  display: block;
+  width: 100%;
+  grid-area: a;
+}
+
