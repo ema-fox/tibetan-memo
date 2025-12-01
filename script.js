@@ -42,6 +42,8 @@ let state = {
     successes: {},
     encounters: {},
     card_exclusions: {},
+    hide_counters: {},
+
     ...JSON.parse(localStorage.getItem('tibetan-memo-state'), "")};
 
 let deck_prefix = "https://ema-fox.github.io/tibetan-deck/";
@@ -260,7 +262,24 @@ function add_key(el, key) {
     add_key_class(el, key);
 }
 
+function hide(query) {
+    let el =  document.querySelector(query);
+    if (!el.classList.contains('hidden')) {
+        state.hide_counters[query] ||= 0;
+        state.hide_counters[query]++;
+        el.classList.add('hidden');
+    }
+}
+
+function unhide(query) {
+    state.hide_counters[query] ||= 0;
+    if (state.hide_counters[query] < 10) {
+        document.querySelector(query).classList.remove('hidden');
+    }
+}
+
 function finish_round() {
+    unhide('#tutorial-new-round');
     if (errors < 1) {
         if (state.n_cards < 12 || state.difficulty_factor > 3) {
             state.n_cards++;
@@ -279,6 +298,8 @@ function finish_round() {
 }
 
 function show_notes() {
+    unhide('#tutorial-listen');
+
     let display_notes = get_display_notes();
     log_status();
 
@@ -323,9 +344,12 @@ function show_notes() {
 
         card_el.addEventListener('click', () => {
             if (current_audio) {
+                hide('#tutorial-choice');
+                unhide('#tutorial-listen');
                 state.try_counters[today()] ||= 0;
                 state.try_counters[today()]++;
                 if (current_audio.id === card_el.id) {
+                    unhide('#tutorial-win');
                     audios.splice(audio_i, 1);
                     clamp_audio_i();
                     card_el.remove();
@@ -342,6 +366,7 @@ function show_notes() {
                         finish_round();
                     }
                 } else {
+                    unhide('#tutorial-fail');
                     add_error(card_el.id, current_audio.id);
                     add_error(current_audio.id, card_el.id);
 
@@ -361,6 +386,11 @@ function show_notes() {
 }
 
 function play_audio_i() {
+    hide('#tutorial-new-round')
+    hide('#tutorial-listen');
+    hide('#tutorial-win');
+    hide('#tutorial-fail');
+    unhide('#tutorial-choice');
     current_audio = audios[audio_i];
     if (current_audio) {
         current_audio.play();

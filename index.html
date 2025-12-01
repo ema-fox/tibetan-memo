@@ -5,11 +5,26 @@
         <script src="script.js"></script>
     </head>
     <body>
+        <div id="tutorial-choice" class="tutorial hidden">
+            Choose what you think is the correct translation. If you don't know then just guess.
+        </div>
+        <div id="tutorial-win" class="tutorial hidden">
+            Congratulations! you got it right!
+        </div>
+        <div id="tutorial-fail" class="tutorial hidden">
+            Oh no! that wasn't the correct answer. Don't worry you'll get it right the next time.
+        </div>
+        <div id="tutorial-new-round" class="tutorial hidden">
+            A new round has started.
+        </div>
         <div id="ens"></div>
         <div class="footer">
         <div id="audios"></div>
         <div id="controls">
             <button id="play" onclick="play_audio_i()">
+                <div id="tutorial-listen" class="tutorial hidden">
+                    Listen to a word or sentence in Tibetan.
+                </div>
                 <div class="icon play">&#x25B6;&#xFE0E;</div>
                 <div class="key">Space</div>
             </button>
@@ -17,7 +32,10 @@
                 <div class="icon">&#x23F8;&#xFE0E;</div>
                 <div class="key">Space</div>
             </button>
-            <button onclick="play_next_audio()">
+            <button id="next-audio" onclick="play_next_audio()">
+                <div id="tutorial-next-audio" class="tutorial hidden">
+                    You can skip to the next audio.
+                </div>
                 <div class="icon">&#x23ED;&#xFE0E;</div>
                 <div class="key">Right arrow</div>
             </button>
