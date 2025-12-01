@@ -293,10 +293,10 @@ function show_notes() {
         audio_el.id = "card_" + note.sound;
         audio_el.src = deck_prefix + 'sound/' + note.sound;
         audio_el.addEventListener('play', () => {
-            document.querySelector("#play > .icon").innerText = '\u23f8';
+            document.querySelector("#controls").classList.add('playing');
         });
         audio_el.addEventListener('ended', () => {
-            document.querySelector("#play > .icon").innerText = '\u23f5';
+            document.querySelector("#controls").classList.remove('playing');
         });
         audios.push(audio_el);
     });

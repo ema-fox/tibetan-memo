@@ -33,6 +33,24 @@ body {
   flex-grow: 1;
 }
 
+#controls button {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+#controls #pause{
+  display: none;
+}
+
+#controls.playing #pause{
+  display: block;
+}
+
+#controls.playing #play{
+  display: none;
+}
+
 #stats {
   margin-left: auto;
   background-color: oklch(0.8 0 0);
