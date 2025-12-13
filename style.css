@@ -29,6 +29,7 @@ body {
 .tutorial {
   font-size: 2.5em;
   color: darkblue;
+  padding: 1ch;
 }
 
 #controls {
