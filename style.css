@@ -21,9 +21,27 @@ body {
 #ens {
   font-size: 2em;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(32ch, 1fr));
+  grid-template-columns: repeat(1, 1fr);
   gap: 1em;
   margin: 1em;
+}
+
+@media (min-width: 70ch) {
+  #ens {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 150ch) {
+  #ens {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 240ch) {
+  #ens {
+    grid-template-columns: repeat(4, 1fr);
+  }
 }
 
 .tutorial {
@@ -93,7 +111,7 @@ body {
   user-select: none;
   cursor: pointer;
   font-family: sans-serif;
-  max-width: 40ch;
+  max-width: 60ch;
   overflow: hidden;
   display: grid;
   grid-template-areas: "a";
