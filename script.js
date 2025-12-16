@@ -197,6 +197,10 @@ function log_status() {
                 "avg:", avg_success());
 
     let estimated_required_tries = (goal_success - success) / speed;
+    let estimated_total_required_tries = goal_success / speed;
+
+    console.log("all_tries:", all_tries, "etrt:", estimated_total_required_tries | 0);
+
     let estimated_days = Math.ceil(estimated_required_tries / today_tries);
     let eta = "Unkown";
     if (isFinite(estimated_days)) {
