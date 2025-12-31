@@ -58,8 +58,12 @@ function sum(xs) {
     return xs.reduce((a, b) => a + b, 0);
 }
 
+function scale_sucess(x) {
+    return Math.log2(Math.max(1, x + 1)) * 10;
+}
+
 function get_all_success() {
-    return sum(Object.values(state.successes).map(x => Math.log2(Math.max(1, x + 1)) * 10)) | 0;
+    return sum(Object.values(state.successes).map(scale_sucess)) | 0;
 }
 
 function avg_success() {
@@ -157,7 +161,7 @@ function get_display_notes() {
 }
 
 function log_status() {
-    let card_goal = 10 * Math.log2(20);
+    let card_goal = scale_sucess(20);
 
     let n_all_cards = notes.length;
 
@@ -424,12 +428,6 @@ addEventListener('keydown', e => {
         play_next_audio();
     }
 });
-
-addEventListener('DOMContentLoaded', async () => {
-    notes = await (await fetch(deck_prefix + 'cards.json')).json();
-    show_notes();
-});
-
 
 let status_day = today();
 
