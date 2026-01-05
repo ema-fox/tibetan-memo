@@ -43,6 +43,7 @@ let state = {
     encounters: {},
     card_exclusions: {},
     hide_counters: {},
+    word_stats: {},
 
     ...JSON.parse(localStorage.getItem('tibetan-memo-state'), "")};
 

@@ -159,3 +159,29 @@ button .key {
   grid-area: a;
 }
 
+.progress {
+  min-width: 20ch;
+  display: flex;
+  background: #888;
+  margin-top: 0.4em;
+  height: 0.5em;
+  overflow: hidden;
+  border-radius: 0.2em;
+  border: #222 solid 1px
+}
+
+.progress > * {
+  height: 1em;
+  content: ' ';
+}
+
+
+.progress > *:nth-child(1) {
+  background: #79ccdb;
+}
+
+
+.progress > *:nth-child(2) {
+  background: #d0e600;
+}
+
