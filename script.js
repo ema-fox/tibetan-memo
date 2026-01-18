@@ -423,6 +423,12 @@ addEventListener('keypress', e => {
     }
 });
 
+addEventListener('keyup', e => {
+    if (e.key === ' ') {
+        e.preventDefault();
+    }
+});
+
 addEventListener('keydown', e => {
     if (e.key === 'ArrowRight') {
         e.preventDefault();
