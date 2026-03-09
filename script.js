@@ -202,7 +202,7 @@ function render_duration(d) {
     ];
 
     while (components.length && components[0].amount === 0) {
-        components.unshift();
+        components.shift();
     }
 
     let result = `${components[0].amount} ${components[0].unit}`;
