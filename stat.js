@@ -4,8 +4,9 @@ function progress_list(list_el, notes) {
         progress.classList.add('progress');
         let bar1 = document.createElement('div');
         let bar2 = document.createElement('div');
-        bar1.style.width = `${100 * (note.supported_success - note.improved_today) / scale_sucess(10)}%`;
-        bar2.style.width = `${100 * note.improved_today / scale_sucess(10)}%`;
+        bar1.style.width = `${100 * note.score}%`;
+        //bar1.style.width = `${100 * (note.supported_success - note.improved_today) / scale_sucess(10)}%`;
+        //bar2.style.width = `${100 * note.improved_today / scale_sucess(10)}%`;
         progress.append(bar1, bar2);
         let el = document.createElement('div');
         let span = document.createElement('span');
@@ -19,32 +20,19 @@ function progress_list(list_el, notes) {
 
 function word_stats() {
     let notes = enriched_notes();
-    let td = today();
-    let days = Object.keys(state.word_stats).filter(x => x !== td).toSorted();
-    let prev_word_stats = state.word_stats[days[days.length - 1]] || {};
 
-    let notes2 = sort_by(note => note.supported_success, notes.map(note => {
-        let supports = notes.filter(note2 => note2.uchen.indexOf(note.uchen) >= 0);
-        let supported_success = sum(supports.map(note => scale_sucess(note.success))) / supports.length;
-        let improved_today = supported_success - (prev_word_stats[note.id] || 0);
-        return {...note, bla: supports.length, supported_success, improved_today};
-    }).filter(note => note.bla > 4));
+    let notes2 = sort_by(note => note.score, notes.filter(note => notes.filter(note2 => note2.uchen.indexOf(note.uchen) >= 0).length > 4));
 
     let {learned = [], learning = [], to_learn = []} = Object.groupBy(notes2, note => {
-        if (note.supported_success - note.improved_today >= scale_sucess(10)) {
+        if (note.score > 0.9) {
+            console.log(Object.keys(note.tokens), Object.keys(note.tokens).map(token_score));
             return 'learned';
-        } else if (note.improved_today) {
+        } else if (note.score > 0.2) {
             return 'learning';
         } else {
             return 'to_learn';
         }
     });
-
-    state.word_stats[td] ||= {};
-    notes2.forEach(note => {
-        state.word_stats[td][note.id] = note.supported_success;
-    });
-    save();
 
     let learned_el = document.createElement('div');
     let learned_title = document.createElement('h2');
@@ -76,7 +64,7 @@ function word_stats() {
 }
 
 addEventListener('DOMContentLoaded', async () => {
-    notes = await (await fetch(deck_prefix + 'cards.json')).json();
+    await load_notes();
     word_stats();
 });
 

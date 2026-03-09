@@ -23,6 +23,34 @@ function sort_by(f, xs) {
     return xs.toSorted((a, b) => f(a) - f(b));
 }
 
+function bubble_max(xs, f) {
+    let end_i =  xs.length - 1
+    let max_i = end_i;
+    let max_score = f(xs[max_i]);
+    for (let i = 0; i < end_i - 1; i++) {
+        let i_score = f(xs[i]);
+        if (max_score < i_score) {
+            max_i = i;
+            max_score = i_score;
+        }
+    }
+
+    let tmp = xs[end_i];
+    xs[end_i] = xs[max_i];
+    xs[max_i] = tmp;
+}
+
+function merge_with(a, b, f) {
+    Object.entries(b).forEach(([k, v]) => {
+        if (a.hasOwnProperty(k)) {
+            a[k] = f(a[k], v);
+        } else {
+            a[k] = v
+        }
+    });
+    return a;
+}
+
 function now() {
     return (new Date()).getTime();
 }
@@ -37,50 +65,77 @@ function today() {
 
 let state = {
     n_cards: 1,
-    difficulty_factor: 2,
+    difficulty_factor: 0,
     try_counters: {},
-    successes: {},
-    encounters: {},
-    card_exclusions: {},
     hide_counters: {},
-    word_stats: {},
+    success_tokens: {"བཀྲ ཤིས": 1,
+                     "བདེ ལེགས": 1},
+    fail_tokens: {},
+    last_heard: {},
 
     ...JSON.parse(localStorage.getItem('tibetan-memo-state'), "")};
 
 let deck_prefix = "https://ema-fox.github.io/tibetan-deck/";
 
 let notes = [];
+let notes_by_id = {};
+
+async function load_notes() {
+    notes = (await (await fetch(deck_prefix + 'cards.json')).json())
+        .map(note => {
+            let tokens = {};
+            get_tokens(note).forEach(token => {
+                tokens[token] = 1; // only count duplicated tokens once
+            });
+            return {
+                id: 'card_' + (note.id || note.sound),
+                tokens: tokens,
+                ...note
+            };
+        });
+    notes.forEach(note => {
+        notes_by_id[note.id] = note;
+    });
+}
 
 function save() {
     localStorage.setItem('tibetan-memo-state', JSON.stringify(state));
 }
 
+function plus(a, b) {
+    return a + b;
+}
+
 function sum(xs) {
-    return xs.reduce((a, b) => a + b, 0);
+    return xs.reduce(plus, 0);
 }
 
-function scale_sucess(x) {
-    return Math.log2(Math.max(1, x + 1)) * 10;
+function prod(xs) {
+    return xs.reduce((a, b) => a * b, 1);
 }
 
-function get_all_success() {
-    return sum(Object.values(state.successes).map(scale_sucess)) | 0;
+function mean(xs) {
+    return sum(xs) / xs.length;
 }
 
-function avg_success() {
-    return get_all_success() / Object.values(state.successes).length | 0;
+function geo_mean(xs) {
+    return Math.pow(prod(xs), 1 / xs.length);
 }
 
+function token_score(token) {
+    let win = 1 + (state.success_tokens[token] || 0);
+    let fail = 7 + (state.fail_tokens[token] || 0);
+    return win / (win + fail);
+}
+
+function note_score(note) {
+    return geo_mean(Object.keys(note.tokens).map(token_score));
+}
 
 function enriched_notes() {
     return notes.map(note => {
-        let id = 'card_' + note.sound;
-        let success = (state.successes[id] || 0);
-        let failure = sum(Object.values(state.card_exclusions[id] || {}));
-        let encounter = (state.encounters[id] || 0);
-        return {id, success, encounter, failure,
-                tokens: get_tokens(note),
-                ...note};
+        let score = note_score(note);
+        return {score, ...note};
     });
 }
 
@@ -89,85 +144,84 @@ function get_tokens(note) {
     return tokens.concat(tokens.slice(0, -1).map((a, i) => `${a} ${tokens[i + 1]}`));
 }
 
-function get_token_weights() {
-    let counts = {};
-    let res = {};
-    enriched_notes().forEach(note => {
-        let tokens = note.tokens;
-        let val = Math.min(note.success, 10) / tokens.length;
-        tokens.forEach(token => {
-            counts[token] ||= 0.0;
-            counts[token] += 1;
-            res[token] ||= 0.0;
-            res[token] += val;
-        });
-    });
-    Object.keys(res).forEach(token => {
-        res[token] /= counts[token];
-    });
-    return res;
+function add_bags(xs) {
+    return xs.reduce((a, b) => merge_with(a, b, plus), {});
 }
 
-function sorted_notes() {
-    let weights = get_token_weights();
-    console.log(sort_by(x => x[1], Object.entries(weights)));
+function sleep_seconds() {
+    return 10 * Math.pow(2, 1 + state.difficulty_factor / 2) | 0
+}
 
-    let notes2 = enriched_notes().map(note => {
-        let tokens = note.tokens;
-        let res = 0;
-        tokens.forEach(s => {
-            res += weights[s] / tokens.length;
-        });
-        let priority = res / Math.pow(state.difficulty_factor, note.encounter + note.failure);
-        return {priority, ...note};
-    });
-
-    console.log(sort_by(note => -note.priority, notes2).map(n => n.encounter));
-    return sort_by(note => -note.priority, notes2);
+function sleep_cutoff() {
+    return now() - 1000 * sleep_seconds();
 }
 
 function get_display_notes() {
-    let excluded_notes = {};
-    let excluded_tokens = {};
+    let cutoff = sleep_cutoff();
+    let candidates = notes.filter(note => (state.last_heard[note.id] || 0) < cutoff);
+    console.log(notes.length - candidates.length, candidates.length);
+    let res = [];
 
-    let res = sorted_notes().filter(note => {
-        let id = 'card_' + note.sound;
-        let success = (state.successes[id] || 0);
-        let prob = 0.5 / Math.pow(2, success / 10);
+    let used_tokens = {};
 
-        let res = !excluded_notes[id];
-
-        if (res) {
-            let count = 0;
-            note.tokens.forEach(token => {
-                count += excluded_tokens[token] || 0;
+    while (candidates.length && res.length < state.n_cards) {
+        bubble_max(candidates, note => {
+            let score = 1;
+            Object.keys(note.tokens).forEach(token => {
+                if (used_tokens[token]) {
+                    // token is already used in a display note;
+                    score *= 1/8;
+                } else {
+                    let ts = token_score(token);
+                    //console.log(ratio);
+                    if (ts < 0.9) {
+                        score *= ts;
+                    } else {
+                        // we know this token well so don't need to prioritze it;
+                        //console.log(token);
+                        score *= 1/8
+                    }
+                }
             });
-            if (note.tokens.length < count) {
-                res = false;
-            }
-        }
+            return Math.pow(score, 1 / Object.keys(note.tokens).length);
+        });
+        let note = candidates.pop();
+        used_tokens = {...used_tokens, ...note.tokens};
+        res.push(note);
+    }
+    return res;
+}
 
-        if (res) {
-            Object.assign(excluded_notes, state.card_exclusions[id])
-            note.tokens.forEach(token => {
-                excluded_tokens[token] ||= 0;
-                excluded_tokens[token]++;
-            });
-        }
+function render_duration(d) {
+    let rounded = d.round({largestUnit: 'days'});
+    let components = [
+        {amount: rounded.days, unit: 'days'},
+        {amount: rounded.hours, unit: 'hours'},
+        {amount: rounded.minutes, unit: 'minutes'},
+        {amount: rounded.seconds, unit: 'seconds'}
+    ];
 
-        return res;
-    });
+    while (components.length && components[0].amount === 0) {
+        components.unshift();
+    }
 
-    return res.slice(0, state.n_cards);
+    let result = `${components[0].amount} ${components[0].unit}`;
+
+    if (components[0].amount < 10 && components[1] && components[1].amount !== 0) {
+        result += ` and ${components[1].amount} ${components[1].unit}`;
+    }
+
+    return result;
 }
 
 function log_status() {
-    let card_goal = scale_sucess(20);
+    let cutoff = sleep_cutoff();
+    let sleeping_notes = notes.filter(note => (state.last_heard[note.id] || 0) > cutoff)
 
     let n_all_cards = notes.length;
 
-    let success = get_all_success();
-    let goal_success = n_all_cards * card_goal;
+    let success = sleeping_notes.length;
+    let goal_success = notes.length;
 
     let prog_el = document.querySelector('#progress');
     prog_el.max = goal_success;
@@ -178,7 +232,7 @@ function log_status() {
 
     let speed = success / all_tries;
 
-    let learned_today = today_tries * speed / card_goal | 0;
+    let learned_today = today_tries * speed | 0;
 
     let efforts = {...state.try_counters};
     delete efforts[today()];
@@ -198,8 +252,7 @@ function log_status() {
     target_el.max = target;
     target_el.value = today_tries;
 
-    console.log("success:", success,
-                "avg:", avg_success());
+    console.log("success:", success);
 
     let estimated_required_tries = (goal_success - success) / speed;
     let estimated_total_required_tries = goal_success / speed;
@@ -215,9 +268,10 @@ function log_status() {
 
     let stats = [
         ["tableau", state.n_cards],
-        ["novelty", (10 * state.difficulty_factor | 0) / 10],
-        ["speed", speed | 0],
-        ["learned today", learned_today],
+        //["novelty", (10 * state.difficulty_factor | 0) / 10],
+        ["loop", render_duration(Temporal.Duration.from({seconds: sleep_seconds()}))],
+        //["speed", speed | 0],
+        //["learned today", learned_today],
         ["ETA", eta]
     ];
 
@@ -230,13 +284,6 @@ function log_status() {
         tr.insertCell().innerText = k;
         tr.insertCell().innerText = v;
     });
-}
-
-function add_error(id1, id2) {
-    state.successes[id1] = -5;
-    state.card_exclusions[id1] ||= {};
-    state.card_exclusions[id1][id2] ||= 0;
-    state.card_exclusions[id1][id2] += 1;
 }
 
 let errors = 0;
@@ -290,15 +337,21 @@ function unhide(query) {
 function finish_round() {
     unhide('#tutorial-new-round');
     if (errors < 1) {
-        if (state.n_cards < 12 || state.difficulty_factor > 3) {
+        if (state.n_cards < 12) {
             state.n_cards++;
         }
         if (state.n_cards > 10) {
-            state.difficulty_factor += 0.05;
+            state.difficulty_factor += 1;
+        } else {
+            state.difficulty_factor += 0.5;
         }
     } else if (errors > 1) {
         state.n_cards--;
-        state.difficulty_factor -= 0.1;
+        if (state.n_cards > 10) {
+            state.difficulty_factor -= 0.5;
+        } else {
+            state.difficulty_factor -= 1;
+        }
     }
     errors = 0;
 
@@ -312,15 +365,13 @@ function show_notes() {
     let display_notes = get_display_notes();
     log_status();
 
-    console.log(sort_by(x=>x, display_notes.map(x => [x.encounter, x.failure])));
-
     let ens_el = document.querySelector('#ens');
 
     shuffle(display_notes);
 
     display_notes.forEach((note, i) => {
         let audio_el = document.createElement('audio');
-        audio_el.id = "card_" + note.sound;
+        audio_el.id = note.id;
         audio_el.src = deck_prefix + 'sound/' + note.sound;
         audio_el.addEventListener('play', () => {
             document.querySelector("#controls").classList.add('playing');
@@ -337,7 +388,7 @@ function show_notes() {
     ).forEach((note, i) => {
         let card_el = document.createElement('div');
         card_el.classList.add('card');
-        card_el.id = "card_" + note.sound;
+        card_el.id = note.id;
 
         let img_el = document.createElement('img');
         img_el.src = deck_prefix + 'images/' + (note.img || 'placeholder.png');
@@ -357,6 +408,33 @@ function show_notes() {
                 unhide('#tutorial-listen');
                 state.try_counters[today()] ||= 0;
                 state.try_counters[today()]++;
+
+                state.last_heard[card_el.id] = now();
+
+                let n_cards_left = ens_el.childElementCount;
+
+                //console.log(ens_el.childElements);
+                let bla = add_bags([].map.call(ens_el.childNodes, card => notes_by_id[card.id].tokens));
+
+                let win = {};
+                let fail = {};
+
+                Object.keys(notes_by_id[current_audio.id].tokens).forEach(token => {
+                    let prevalence = bla[token] / n_cards_left;
+
+                    if (notes_by_id[card_el.id].tokens[token]) {
+
+                        state.success_tokens[token] ||= 0;
+                        state.success_tokens[token] += 1 - prevalence;
+                        win[token] = 1 - prevalence;
+                    } else {
+                        state.fail_tokens[token] ||= 0;
+                        state.fail_tokens[token] += prevalence;
+                        fail[token] = prevalence;
+                    }
+                });
+
+
                 if (current_audio.id === card_el.id) {
                     unhide('#tutorial-win');
                     audios.splice(audio_i, 1);
@@ -366,18 +444,11 @@ function show_notes() {
 
                     let n_cards_left = ens_el.childElementCount;
 
-                    state.successes[card_el.id] ||= 0;
-                    state.successes[card_el.id] += n_cards_left;
-                    state.encounters[card_el.id] ||= 0;
-                    state.encounters[card_el.id]++;
-
                     if (n_cards_left === 0) {
                         finish_round();
                     }
                 } else {
                     unhide('#tutorial-fail');
-                    add_error(card_el.id, current_audio.id);
-                    add_error(current_audio.id, card_el.id);
 
                     errors++;
                     card_el.classList.add('error');

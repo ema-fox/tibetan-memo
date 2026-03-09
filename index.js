@@ -1,6 +1,6 @@
 
 addEventListener('DOMContentLoaded', async () => {
-    notes = await (await fetch(deck_prefix + 'cards.json')).json();
+    await load_notes();
     show_notes();
 });
 
