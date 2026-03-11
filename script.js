@@ -82,6 +82,7 @@ let notes_by_id = {};
 
 async function load_notes() {
     notes = (await (await fetch(deck_prefix + 'cards.json')).json())
+        .filter(note => !note.disabled)
         .map(note => {
             let tokens = {};
             get_tokens(note).forEach(token => {
