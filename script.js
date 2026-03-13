@@ -341,10 +341,12 @@ function finish_round() {
         if (state.n_cards < 12) {
             state.n_cards++;
         }
-        if (state.n_cards > 10) {
-            state.difficulty_factor += 1;
-        } else {
-            state.difficulty_factor += 0.5;
+        if (state.difficulty_factor < 50) {
+            if (state.n_cards > 10) {
+                state.difficulty_factor += 1;
+            } else {
+                state.difficulty_factor += 0.5;
+            }
         }
     } else if (errors > 1) {
         state.n_cards--;
