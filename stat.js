@@ -4,7 +4,7 @@ function progress_list(list_el, notes) {
         progress.classList.add('progress');
         let bar1 = document.createElement('div');
         let bar2 = document.createElement('div');
-        bar1.style.width = `${100 * note.score}%`;
+        bar1.style.width = `${100 * note.score / token_known_cutoff()}%`;
         //bar1.style.width = `${100 * (note.supported_success - note.improved_today) / scale_sucess(10)}%`;
         //bar2.style.width = `${100 * note.improved_today / scale_sucess(10)}%`;
         progress.append(bar1, bar2);
@@ -24,7 +24,7 @@ function word_stats() {
     let notes2 = sort_by(note => note.score, notes.filter(note => notes.filter(note2 => note2.uchen.indexOf(note.uchen) >= 0).length > 4));
 
     let {learned = [], learning = [], to_learn = []} = Object.groupBy(notes2, note => {
-        if (note.score > 0.9) {
+        if (note.score > token_known_cutoff()) {
             console.log(Object.keys(note.tokens), Object.keys(note.tokens).map(token_score));
             return 'learned';
         } else if (note.score > 0.2) {

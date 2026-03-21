@@ -157,6 +157,10 @@ function sleep_cutoff() {
     return now() - 1000 * sleep_seconds();
 }
 
+function token_known_cutoff() {
+    return Math.pow(0.9, Math.max(1, state.difficulty_factor - 34));
+}
+
 function get_display_notes() {
     let cutoff = sleep_cutoff();
     let candidates = notes.filter(note => (state.last_heard[note.id] || 0) < cutoff);
@@ -175,7 +179,7 @@ function get_display_notes() {
                 } else {
                     let ts = token_score(token);
                     //console.log(ratio);
-                    if (ts < 0.9) {
+                    if (ts < token_known_cutoff()) {
                         score *= ts;
                     } else {
                         // we know this token well so don't need to prioritze it;
