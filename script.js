@@ -182,9 +182,9 @@ function get_display_notes() {
                     if (ts < token_known_cutoff()) {
                         score *= ts;
                     } else {
-                        // we know this token well so don't need to prioritze it;
+                        // we know this token well so we deprioritze it;
                         //console.log(token);
-                        score *= 1/8
+                        score *= 1/9
                     }
                 }
             });
