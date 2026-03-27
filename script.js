@@ -125,7 +125,7 @@ function geo_mean(xs) {
 
 function token_score(token) {
     let win = 1 + (state.success_tokens[token] || 0);
-    let fail = 7 + (state.fail_tokens[token] || 0);
+    let fail = 7 + (state.fail_tokens[token] || 0) * 10;
     return win / (win + fail);
 }
 
