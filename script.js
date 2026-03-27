@@ -423,9 +423,6 @@ function show_notes() {
                 //console.log(ens_el.childElements);
                 let bla = add_bags([].map.call(ens_el.childNodes, card => notes_by_id[card.id].tokens));
 
-                let win = {};
-                let fail = {};
-
                 Object.keys(notes_by_id[current_audio.id].tokens).forEach(token => {
                     let prevalence = bla[token] / n_cards_left;
 
@@ -433,11 +430,9 @@ function show_notes() {
 
                         state.success_tokens[token] ||= 0;
                         state.success_tokens[token] += 1 - prevalence;
-                        win[token] = 1 - prevalence;
                     } else {
                         state.fail_tokens[token] ||= 0;
                         state.fail_tokens[token] += prevalence;
-                        fail[token] = prevalence;
                     }
                 });
 
