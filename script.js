@@ -173,11 +173,16 @@ function get_display_notes() {
         bubble_max(candidates, note => {
             let score = 1;
             Object.keys(note.tokens).forEach(token => {
+                let ts = token_score(token);
                 if (used_tokens[token]) {
                     // token is already used in a display note;
-                    score *= 1/8;
+                    if (ts < token_known_cutoff()) {
+                        score *= 1/8;
+                    } else {
+                        // well known tokens should ideally not be used at all, failing that it should be used in as many cards as possible so that learners can't rely on recognizing it.
+                        score *= 1;
+                    }
                 } else {
-                    let ts = token_score(token);
                     //console.log(ratio);
                     if (ts < token_known_cutoff()) {
                         score *= ts;
