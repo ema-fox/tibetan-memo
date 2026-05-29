@@ -377,6 +377,10 @@ function show_notes() {
     let display_notes = get_display_notes();
     log_status();
 
+    if (!display_notes.length) {
+        unhide('#tutorial-no-notes-left');
+    }
+
     let ens_el = document.querySelector('#ens');
 
     shuffle(display_notes);
