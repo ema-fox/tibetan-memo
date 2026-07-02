@@ -355,7 +355,7 @@ function finish_round() {
         state.difficulty_factor = Math.min(25, state.difficulty_factor + 1);
     } else if (errors > 1) {
         state.n_cards--;
-        state.difficulty_factor++;
+        state.difficulty_factor--;
     }
     errors = 0;
 
