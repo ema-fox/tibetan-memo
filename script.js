@@ -352,7 +352,7 @@ function finish_round() {
     unhide('#tutorial-new-round');
     if (errors < 1) {
         state.n_cards = Math.min(12, state.n_cards + 1);
-        state.difficulty_factor = Math.min(13, state.difficulty_factor + 1);
+        state.difficulty_factor = Math.min(25, state.difficulty_factor + 1);
     } else if (errors > 1) {
         state.n_cards--;
         state.difficulty_factor++;
