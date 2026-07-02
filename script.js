@@ -119,14 +119,23 @@ function mean(xs) {
     return sum(xs) / xs.length;
 }
 
+function avg(xs) {
+    return sum(xs) / xs.length;
+}
+
 function geo_mean(xs) {
     return Math.pow(prod(xs), 1 / xs.length);
 }
 
-function token_score(token) {
-    let win = 1 + (state.success_tokens[token] || 0);
-    let fail = 7 + (state.fail_tokens[token] || 0) * 10;
+function score_winfail({win, fail}) {
     return win / (win + fail);
+}
+
+function token_score(token) {
+    return score_winfail({
+        win: 1 + (state.success_tokens[token] || 0),
+        fail: 3 + (state.fail_tokens[token] || 0) * 10
+    });
 }
 
 function note_score(note) {
@@ -150,7 +159,7 @@ function add_bags(xs) {
 }
 
 function sleep_seconds() {
-    return 10 * Math.pow(2, 1 + state.difficulty_factor / 2) | 0
+    return 60 * 2.5 * Math.pow(2, 1 + state.difficulty_factor / 2) | 0
 }
 
 function sleep_cutoff() {
@@ -158,7 +167,7 @@ function sleep_cutoff() {
 }
 
 function token_known_cutoff() {
-    return Math.pow(0.9, Math.max(1, state.difficulty_factor - 34));
+    return 0.8;
 }
 
 function get_display_notes() {
@@ -177,7 +186,7 @@ function get_display_notes() {
                 if (used_tokens[token]) {
                     // token is already used in a display note;
                     if (ts < token_known_cutoff()) {
-                        score *= 1/8;
+                        score *= 1/5;
                     } else {
                         // well known tokens should ideally not be used at all, failing that it should be used in as many cards as possible so that learners can't rely on recognizing it.
                         score *= 1;
@@ -189,7 +198,7 @@ function get_display_notes() {
                     } else {
                         // we know this token well so we deprioritze it;
                         //console.log(token);
-                        score *= 1/9
+                        score *= 1/5;
                     }
                 }
             });
@@ -224,25 +233,17 @@ function render_duration(d) {
     return result;
 }
 
+function tries_to_level(tries) {
+    return (Math.log(tries / 50) / Math.log(3)) | 0;
+}
+
+function level_to_tries(level) {
+    return Math.pow(3, level) * 50;
+}
+
 function log_status() {
-    let cutoff = sleep_cutoff();
-    let sleeping_notes = notes.filter(note => (state.last_heard[note.id] || 0) > cutoff)
-
-    let n_all_cards = notes.length;
-
-    let success = sleeping_notes.length;
-    let goal_success = notes.length;
-
-    let prog_el = document.querySelector('#progress');
-    prog_el.max = goal_success;
-    prog_el.value = success;
-
     let all_tries = sum(Object.values(state.try_counters));
     let today_tries = state.try_counters[today()] || 0;
-
-    let speed = success / all_tries;
-
-    let learned_today = today_tries * speed | 0;
 
     let efforts = {...state.try_counters};
     delete efforts[today()];
@@ -262,14 +263,19 @@ function log_status() {
     target_el.max = target;
     target_el.value = today_tries;
 
-    console.log("success:", success);
+    let level = tries_to_level(all_tries);
 
-    let estimated_required_tries = (goal_success - success) / speed;
-    let estimated_total_required_tries = goal_success / speed;
+    let base_tries = level_to_tries(level);
+    let goal_tries = level_to_tries(level + 1);
+    let required_tries = goal_tries - all_tries;
 
-    console.log("all_tries:", all_tries, "etrt:", estimated_total_required_tries | 0);
+    let prog_el = document.querySelector('#progress');
+    prog_el.max = goal_tries - base_tries;
+    prog_el.value = all_tries - base_tries;
 
-    let estimated_days = Math.ceil(estimated_required_tries / today_tries);
+    console.log("all_tries:", all_tries);
+
+    let estimated_days = Math.ceil(required_tries / today_tries);
     let eta = "Unkown";
     if (isFinite(estimated_days)) {
         let estimated_finish = new Date(now() + estimated_days * 24 * 60 * 60 * 1000);
@@ -277,12 +283,10 @@ function log_status() {
     }
 
     let stats = [
+        ["level", level],
         ["tableau", state.n_cards],
-        //["novelty", (10 * state.difficulty_factor | 0) / 10],
         ["loop", render_duration(Temporal.Duration.from({seconds: sleep_seconds()}))],
-        //["speed", speed | 0],
-        //["learned today", learned_today],
-        ["ETA", eta]
+        [`ETA level ${level + 1}`, eta]
     ];
 
     let table = document.querySelector("#stats table");
@@ -347,23 +351,11 @@ function unhide(query) {
 function finish_round() {
     unhide('#tutorial-new-round');
     if (errors < 1) {
-        if (state.n_cards < 12) {
-            state.n_cards++;
-        }
-        if (state.difficulty_factor < 50) {
-            if (state.n_cards > 10) {
-                state.difficulty_factor += 1;
-            } else {
-                state.difficulty_factor += 0.5;
-            }
-        }
+        state.n_cards = Math.min(12, state.n_cards + 1);
+        state.difficulty_factor = Math.min(13, state.difficulty_factor + 1);
     } else if (errors > 1) {
         state.n_cards--;
-        if (state.n_cards > 10) {
-            state.difficulty_factor -= 0.5;
-        } else {
-            state.difficulty_factor -= 1;
-        }
+        state.difficulty_factor++;
     }
     errors = 0;
 
@@ -380,6 +372,8 @@ function show_notes() {
     if (!display_notes.length) {
         unhide('#tutorial-no-notes-left');
     }
+
+    display_notes.forEach(note => note.score = note_score(note));
 
     let ens_el = document.querySelector('#ens');
 
@@ -456,6 +450,7 @@ function show_notes() {
                     let n_cards_left = ens_el.childElementCount;
 
                     if (n_cards_left === 0) {
+                        display_notes.forEach(note => console.log(note.english, note.score, "=>", note_score(note)));
                         finish_round();
                     }
                 } else {

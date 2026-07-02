@@ -27,7 +27,7 @@ function word_stats() {
         if (note.score > token_known_cutoff()) {
             console.log(Object.keys(note.tokens), Object.keys(note.tokens).map(token_score));
             return 'learned';
-        } else if (note.score > 0.2) {
+        } else if (note.score > 1/4) {
             return 'learning';
         } else {
             return 'to_learn';
