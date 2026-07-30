@@ -132,7 +132,7 @@ button .key {
 
 @keyframes error {
   from, to {
-    box-shadow: transparen 0px 0px 0px 0px;
+    box-shadow: transparent 0px 0px 0px 0px;
   }
 
   10% {
