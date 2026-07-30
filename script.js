@@ -177,9 +177,14 @@ function get_display_notes() {
     let res = [];
 
     let used_tokens = {};
+    let used_lenghts = {};
 
     while (candidates.length && res.length < state.n_cards) {
         bubble_max(candidates, note => {
+            // Although it can be good to hear words in isolation we want to make sure rounds don't just consist of mostly single words
+            if (0 < (used_lenghts[Object.keys(note.tokens).length] || 0)) {
+                return 0;
+            }
             let score = 1;
             Object.keys(note.tokens).forEach(token => {
                 let ts = token_score(token);
@@ -206,6 +211,8 @@ function get_display_notes() {
         });
         let note = candidates.pop();
         used_tokens = {...used_tokens, ...note.tokens};
+        used_lenghts[Object.keys(note.tokens).length] ||= 0;
+        used_lenghts[Object.keys(note.tokens).length] += 1;
         res.push(note);
     }
     return res;
