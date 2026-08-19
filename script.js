@@ -188,23 +188,11 @@ function get_display_notes() {
             let score = 1;
             Object.keys(note.tokens).forEach(token => {
                 let ts = token_score(token);
-                if (used_tokens[token]) {
-                    // token is already used in a display note;
-                    if (ts < token_known_cutoff()) {
-                        score *= 1/5;
-                    } else {
-                        // well known tokens should ideally not be used at all, failing that it should be used in as many cards as possible so that learners can't rely on recognizing it.
-                        score *= 1;
-                    }
+                if (used_tokens[token] && ts < token_known_cutoff()) {
+                    // When we're still learning a token we want to make sure it only occurs once per round so that recognizing it is enough to find the right card.
+                    score *= 1/5;
                 } else {
-                    //console.log(ratio);
-                    if (ts < token_known_cutoff()) {
-                        score *= ts;
-                    } else {
-                        // we know this token well so we deprioritze it;
-                        //console.log(token);
-                        score *= 1/5;
-                    }
+                    score *= ts;
                 }
             });
             return Math.pow(score, 1 / Object.keys(note.tokens).length);
