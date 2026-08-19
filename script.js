@@ -68,8 +68,8 @@ let state = {
     difficulty_factor: 0,
     try_counters: {},
     hide_counters: {},
-    success_tokens: {"བཀྲ ཤིས": 1,
-                     "བདེ ལེགས": 1},
+    success_tokens: {"བཀྲ ཤིས": 20,
+                     "བདེ ལེགས": 20},
     fail_tokens: {},
     last_heard: {},
 
